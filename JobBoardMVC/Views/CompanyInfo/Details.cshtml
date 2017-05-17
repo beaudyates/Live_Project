@@ -1,0 +1,209 @@
+﻿@model JobBoardMVC.Models.CompanyViewModel
+
+@{
+    ViewBag.Title = "Company Info";
+    Layout = "../Shared/_CompanyLayout.cshtml";
+}
+
+<style>
+    .embed-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        margin-bottom: 10px;
+        height: 0;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+        .embed-container iframe, .embed-container object, .embed-container embed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+</style>
+
+@* Render partial views containing modals that indicate successful saves*@
+
+@{ 
+    Html.RenderPartial("~/Views/Shared/_PartialSaveCompanyModal.cshtml");
+    Html.RenderPartial("~/Views/Shared/_PartialSaveJobModal.cshtml");
+}
+
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-6">
+            <h3>
+                @*put code for logo here*@
+                @Model.company.CompanyName
+                @{ 
+                    var disable = "";
+                    if (Model.companySaved)
+                    {
+                        disable = "disabled";
+                    }
+                }
+                <a onclick="SaveCompany('@Model.company.CompanyName', this)" class="button btn btn-primary @disable">Save</a>
+            </h3>
+            <address>
+                @Model.company.Address<br />
+                @(Model.company.City) @Model.company.State @Model.company.ZipCode<br />
+                Jobs available: @Model.jobCount
+            </address>
+            @*make some maps*@
+            @if (Model.company.Address == null && Model.company.Latitude == null)
+            {
+                <h4>Oops, No address information available for @Model.company.CompanyName</h4>
+                <div class='embed-container'>
+                    <iframe width="600" height="450" frameborder="0" style="border:0" src="https://www.google.com/maps/embed/v1/view?zoom=10&center=45.5231%2C-122.6765&key=AIzaSyA6O2J7lLtKhM07LikVvEf_5BEOuLhNl80" allowfullscreen></iframe>
+                </div>
+            }
+            @*map made from lat lng with marker at location*@
+            @if (Model.company.Address == null && Model.company.Latitude != null && Model.company.Longitude != null)
+            //use Lat Long to a simple map with marker, but with no directions available.
+            {
+                <div class='embed-container'>
+                    <iframe width="600" height="450" frameborder="0" style="border:0" src="https://www.google.com/maps/embed/v1/view?zoom=10&center=45.5231%2C-122.6765&key=AIzaSyA6O2J7lLtKhM07LikVvEf_5BEOuLhNl80" allowfullscreen></iframe>
+                </div>
+            }
+            @*map made from address, calling embedded map with direction and other advanced functionality*@
+            @if (Model.company.Address != null) //use address to get map
+            {
+                var name = Model.company.CompanyName;
+                var cleanAddress = Model.company.Address.Replace(' ', '+');
+                var city = Model.company.City;
+                var state = Model.company.State;
+                var zip = Model.company.ZipCode;
+                <div class='embed-container'>
+                    <iframe width="600" height="450" frameborder="0" style="border:0"
+                            src="https://www.google.com/maps/embed/v1/place?key=AIzaSyA6O2J7lLtKhM07LikVvEf_5BEOuLhNl80&q=@cleanAddress+@city+@state,@zip&zoom=10" width='600' height='450' frameborder='0' style='border:0' allowfullscreen></iframe>
+                </div>
+            }
+            
+        </div>
+        
+        
+        <div class="col-lg-6">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="headerTitle">@Html.DisplayNameFor(model => model.jobs.FirstOrDefault().JobTitle)</th>
+                        <th>Save Job</th>
+                        <th>@Html.DisplayNameFor(model => model.jobs.FirstOrDefault().ApplicationLink)</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.jobs.Any())
+                    {
+                        foreach (var item in Model.jobs)
+                        {
+                            <tr>
+                                <!-- <td> tags must have no whitespace -->
+                                <td class="tableTitle">@Html.DisplayFor(modelItem => item.JobTitle)</td>
+                                <td><a onclick="SaveJob('@item.ID', this)" class="button btn btn-primary btn-grey">Save</a></td>
+                                <td><input type="button" class="btn btn-warning btn-grey" value="Apply" onclick="window.open('@item.ApplicationLink')"></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    
+</div>
+           
+
+
+
+
+
+
+                    <script type="text/javascript" language="javascript">
+    function SaveCompany(name, trigger) {
+        $(trigger).addClass('disabled');
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("Save", "Dashboard")?name=' + name,
+            success: function () {
+            $("#saveCompanyModal").modal('show'); //pop in modal
+            $("#saveCompanyModal").delay(2000).fadeOut(500); //2 second before fade out, fading last 0.5 sec
+            setTimeout(function () {
+                $("#saveCompanyModal").modal('hide'); // after fade is done hide modal completely
+                }, 2500);// 3 seconds, total time modal is displayed
+            }
+        });
+        
+}
+
+    function SaveJob(id, trigger) {
+        $(trigger).addClass('disabled');
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("Save", "Jobs")?jobId=' + id,
+            success: function () {
+            $("#saveJobModal").modal('show'); //pop in modal
+            $("#saveJobModal").delay(2000).fadeOut(500); //2 second before fade out, fading last 0.5 sec
+            setTimeout(function () {
+                $("#saveJobModal").modal('hide'); // after fade is done hide modal completely
+                }, 2500);// 3 seconds, total time modal is displayed
+            }
+        });
+    }
+</script>
+
+                    @*<script type="text/javascript">
+                            function Initialize()
+                            {
+                                var Tunisie = new google.maps.LatLng(36.81881, 10.16596);
+                                // These are options that set initial zoom level, where the map is centered globally to start, and the type of map to show
+                                var mapOptions = {
+                                    zoom: 8,
+                                    center: Tunisie,
+                                    mapTypeId: google.maps.MapTypeId.G_NORMAL_MAP
+                                };
+                                // This makes the div with id "map_canvas" a google map
+                                var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+                                // a sample list of JSON encoded data of places to visit in Tunisia
+                                // you can either make up a JSON list server side, or call it from a controller using JSONResult
+                                var data = [
+                                          { "Id": 1, "PlaceName": "Zaghouan", "GeoLong": "36.401081", "GeoLat": "10.16596" },
+                                          { "Id": 4, "PlaceName": "Sfax", "GeoLong": "34.745159", "GeoLat": "10.7613" }
+                                       ];
+                                // Using the JQuery "each" selector to iterate through the JSON list and drop marker pins
+                                $.each(data, function (i, item) {
+                                    var marker = new google.maps.Marker({
+                                        'position': new google.maps.LatLng(item.GeoLong, item.GeoLat),
+                                        'map': map,
+                                        'title': item.PlaceName
+                                    });
+                                })
+                            }
+                        </script>
+
+
+                        @model List<TableInfo>
+
+                        if (Model.Count > 0)
+                        {
+                        <table>
+                            <tr>
+                                <td>File Name</td>
+                                <td>Date</td>
+                                <td>Time</td>
+                                <td>Info</td>
+                            </tr>
+                            @foreach (TableInfo item in Model)
+                            {
+                                <tr>
+                                    <td>@item.FileName</td>
+                                    <td>@item.Date</td>
+                                    <td>@item.Time</td>
+                                    <td>@item.Info</td>
+                                </tr>
+                            }
+                        </table>
+                        }*@

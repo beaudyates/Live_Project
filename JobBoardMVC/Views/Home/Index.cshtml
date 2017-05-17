@@ -1,0 +1,99 @@
+﻿@using System;
+@using System.Collections.Generic;
+@using System.Data;
+@using System.Data.Entity;
+@using System.Linq;
+@using System.Threading.Tasks;
+@using System.Net;
+@using System.Web;
+@using System.Web.Mvc;
+@using JobBoardMVC.Models;
+@using System.Data.Entity.Migrations;
+@using JobBoardMVC.CustomFilters;
+@using Microsoft.AspNet.Identity;
+
+@model JobBoardMVC.Models.JobLocationViewModel
+
+@{
+
+    ViewBag.Title = "Home";
+    Layout = "../Shared/_Layout.cshtml";
+
+@* Global variables *@
+int jobCount = ViewBag.Counts; @*Returns count of currently listed jobs, see HomeController.cs* (non-authenticated section)*@
+int companyCount = ViewBag.companyCount; @*Returns count of currently listed companies, see HomeController.cs(non-authenticated section)*@
+// Determine if Administrator, See _LoginPartial.cshtml
+var userName = User.Identity.GetUserName(); //get logged in users user name
+var userId = User.Identity.GetUserId(); //logged in user is fetched using User.Identity.GetUserId - namespace Microsoft.AspNet.Identity method.
+JobBoardMvcContext db = new JobBoardMvcContext();
+var role = (from r in db.Roles where r.Name.Contains("Admin") select r).FirstOrDefault(); //RoleId value is obtained for "Admin" role name from 'Entity Framework Identity' in JobBoardMVC database.
+var users = db.Users.Where(x => x.Roles.Select(y => y.RoleId).Contains(role.Id)).ToList(); // All users with "Admin" role are fetched from the 'Entity Framework Identity' in JobBoardMVC database.
+ 
+}
+
+<!-- This is the Landing Page, /Home/Index.cshtml View.  A nicer Landing page can be built from here -->
+
+<!-- Cookie Saved Password Log-ins: 
+        The AntiForgeryToken code will not allow a startup re-direct from a cookie saved password, 
+            i.e. 'Response.Redirect("/Jobs/Index");' will not work. It causes a run-time error.
+        However, it will allow a cookie saved password to the /Home/Index.cshtml view and the user is recognized as logged-in.
+        When the user clicks on a link, the token re-validates and allows authenticated website use all done very smoothly. As a result
+        we have a nice locked-down website. You are welcome to try and fix this without removing the "AntiForgeryToken Code"-->
+
+<!-- "if, else if, else" statement to determine to show /Home/Index Landing customized based on user: 
+        Administrator, Authenticated User, or Non-Authenticated.
+        Users with a cookie saved password are recognized and logged in.-->
+
+@if (users.Find(x => x.Id == userId) != null)
+    {
+        <div align="Center" class="container-fluid">
+            <p>
+                <h2>Welcome back Administrator</h2>
+            </p>
+        </div>
+    }
+
+
+else if (Request.IsAuthenticated)
+    {
+
+        <div align="Center" class="container-fluid">
+            <p>
+                <h2>Welcome back, @userName.</h2>
+            </p>
+
+            <p>
+                <h3>There are @jobCount jobs available and @companyCount companies hiring.</h3>
+            </p>
+
+            <p>
+                <h3>Click here to continue your search: <a href="/Jobs/Index" id="Link">JobPDX</a></h3>
+            </p>
+
+        </div>
+
+    }
+
+    else
+    {
+
+        <div align="Center" class="container-fluid">
+
+            <p>
+                <h2>Welcome to JobPDX</h2>
+            </p>
+
+            <p>
+                <h3>There are @jobCount jobs available and @companyCount companies hiring.</h3>
+            </p>
+
+            <p>
+                <br><h3><a href="/Account/Register" id="registerLink">Sign Up</a> and find yours now!</h3><br />
+            </p>
+
+        </div>
+    }
+
+
+
+
